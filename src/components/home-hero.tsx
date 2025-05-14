@@ -41,7 +41,7 @@ export default function HomeHero() {
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Link
-                href="/signup"
+                href="/login"
                 className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 sm:px-5 sm:py-3 rounded-lg text-sm sm:text-base text-center font-medium"
               >
                 Get Started

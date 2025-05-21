@@ -1,181 +1,117 @@
-// "use client"
+"use client";
 
-// import { useState } from "react"
-// import Image from "next/image"
-// import Link from "next/link"
-// import { useRouter } from "next/navigation"
-// import { Button } from "@/components/ui/button"
-// import { Card, CardContent } from "@/components/ui/card"
-// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-// import { Label } from "@/components/ui/label"
-// import { Badge } from "@/components/ui/badge"
-// import { CalendarIcon, Clock, MapPin, User } from "lucide-react"
+import { useState, useEffect } from "react";
 
-// export default function EventDetailPage({ params }: { params: { id: string } }) {
-//   const router = useRouter()
-//   const [selectedTicket, setSelectedTicket] = useState("standard")
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, Clock, MapPin, User, Plus, Minus } from "lucide-react";
+import { fetchEvents, Event as EventType } from "@/lib/events";
+import Image from "next/image";
 
-//   // Mock event data - in a real app, this would be fetched from an API
-//   const event = {
-//     id: params.id,
-//     title: "Summer Music Festival",
-//     date: "June 15, 2025",
-//     time: "4:00 PM - 11:00 PM",
-//     location: "Central Park, New York",
-//     image:  "/event1.jpg",
-//     organizer: "Music Events Inc.",
-//     description:
-//       "Join us for the biggest summer music festival featuring top artists from around the world. Enjoy a day of amazing performances, food, and fun activities for all ages.",
-//     tickets: [
-//       {
-//         type: "vip",
-//         name: "VIP",
-//         price: 149.99,
-//         description: "Front row access, exclusive lounge, complimentary drinks",
-//       },
-//       { type: "premium", name: "Premium", price: 99.99, description: "Priority seating, fast-track entry" },
-//       { type: "standard", name: "Standard", price: 49.99, description: "General admission" },
-//     ],
-//   }
-
-//   const handleBuyTicket = () => {
-//     router.push(`/checkout?eventId=${event.id}&ticketType=${selectedTicket}`)
-//   }
-
-//   return (
-//     <main className="container mx-auto px-4 py-8">
-//       <div className="mb-8">
-//         <Link href="/events" className="text-purple-600 hover:underline">
-//           ← Back to Events
-//         </Link>
-//       </div>
-
-//       <div className="grid gap-8 lg:grid-cols-3">
-//         {/* Event Details */}
-//         <div className="lg:col-span-2">
-//           <div className="mb-6 overflow-hidden rounded-lg">
-//             <Image
-//               src={event.image || "/placeholder.svg"}
-//               alt={event.title}
-//               width={1200}
-//               height={600}
-//               className="w-full object-cover"
-//             />
-//           </div>
-
-//           <h1 className="mb-4 text-3xl font-bold">{event.title}</h1>
-
-//           <div className="mb-6 grid gap-4 sm:grid-cols-2">
-//             <div className="flex items-center">
-//               <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
-//               <span>{event.date}</span>
-//             </div>
-//             <div className="flex items-center">
-//               <Clock className="mr-2 h-5 w-5 text-gray-500" />
-//               <span>{event.time}</span>
-//             </div>
-//             <div className="flex items-center">
-//               <MapPin className="mr-2 h-5 w-5 text-gray-500" />
-//               <span>{event.location}</span>
-//             </div>
-//             <div className="flex items-center">
-//               <User className="mr-2 h-5 w-5 text-gray-500" />
-//               <span>{event.organizer}</span>
-//             </div>
-//           </div>
-
-//           <div className="mb-8">
-//             <h2 className="mb-4 text-2xl font-semibold">About This Event</h2>
-//             <p className="text-gray-700">{event.description}</p>
-//           </div>
-//         </div>
-
-//         {/* Ticket Selection */}
-//         <div>
-//           <Card>
-//             <CardContent className="p-6">
-//               <h2 className="mb-4 text-xl font-semibold">Select Tickets</h2>
-
-//               <RadioGroup value={selectedTicket} onValueChange={setSelectedTicket} className="space-y-4">
-//                 {event.tickets.map((ticket) => (
-//                   <div key={ticket.type} className="rounded-lg border p-4">
-//                     <div className="flex items-start space-x-3">
-//                       <RadioGroupItem value={ticket.type} id={ticket.type} className="mt-1" />
-//                       <div className="flex-1">
-//                         <div className="flex items-center justify-between">
-//                           <Label htmlFor={ticket.type} className="text-lg font-medium">
-//                             {ticket.name}
-//                           </Label>
-//                           <span className="font-bold">${ticket.price}</span>
-//                         </div>
-//                         <p className="text-sm text-gray-500">{ticket.description}</p>
-//                         {ticket.type === "vip" && (
-//                           <Badge className="mt-2 bg-purple-100 text-purple-800">Limited Availability</Badge>
-//                         )}
-//                       </div>
-//                     </div>
-//                   </div>
-//                 ))}
-//               </RadioGroup>
-
-//               <Button onClick={handleBuyTicket} className="mt-6 w-full">
-//                 Buy Now
-//               </Button>
-//             </CardContent>
-//           </Card>
-//         </div>
-//       </div>
-//     </main>
-//   )
-// }
-
-
-
-"use client"
-
-import { useState } from "react"
-import { use } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Clock, MapPin, User } from "lucide-react"
-import { events } from "@/lib/events-data"
-
-interface PageProps {
-  params: Promise<{
-    id: string
-  }>
+interface TicketSelection {
+  type: string;
+  quantity: number;
 }
 
-export default function EventDetailPage({ params }: PageProps) {
-  const router = useRouter()
-  const [selectedTicket, setSelectedTicket] = useState("standard")
+export default function EventDetailPage() {
+  const router = useRouter();
+  const params = useParams();
+  const eventId = params?.id ?? "";
 
-  // Unwrap the params Promise using React.use()
-  const unwrappedParams = use(params)
-  const eventId = unwrappedParams.id
+  const [event, setEvent] = useState<EventType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [ticketSelections, setTicketSelections] = useState<TicketSelection[]>([]);
 
-  // Find the event with the matching ID from our events data
-  const event = events.find((event) => event.id === eventId) || {
-    id: "not-found",
-    title: "Event Not Found",
-    date: "",
-    time: "",
-    location: "",
-    image: "/placeholder.svg",
-    organizer: "",
-    description: "Sorry, the event you're looking for could not be found.",
-    tickets: [],
-  }
+  useEffect(() => {
+    async function loadEvent() {
+      setLoading(true);
+      try {
+        const events = await fetchEvents();
+        const foundEvent = events.find((e) => e.id === eventId) || null;
+        setEvent(foundEvent);
+
+        if (foundEvent?.tickets) {
+          // Initialize ticket selections with quantity 0
+          setTicketSelections(
+            foundEvent.tickets.map((ticket) => ({
+              type: ticket.name.toLowerCase().replace(/\s+/g, "-"),
+              quantity: 0,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch event:", error);
+        setEvent(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (eventId) loadEvent();
+  }, [eventId]);
+
+  // Handle quantity change of tickets
+  const handleQuantityChange = (ticketType: string, delta: number) => {
+    setTicketSelections((prev) =>
+      prev.map((selection) =>
+        selection.type === ticketType
+          ? { ...selection, quantity: Math.max(0, selection.quantity + delta) }
+          : selection
+      )
+    );
+  };
+
+  // Calculate total price considering discounts
+  const totalPrice = ticketSelections.reduce((sum, selection) => {
+    const ticket = event?.tickets?.find(
+      (t) => t.name.toLowerCase().replace(/\s+/g, "-") === selection.type
+    );
+    if (!ticket) return sum;
+
+    // Calculate discounted price if discount exists
+    const discountedPrice = ticket.discount
+      ? ticket.price - ticket.discount
+      : ticket.price;
+
+    return sum + discountedPrice * selection.quantity;
+  }, 0);
 
   const handleBuyTicket = () => {
-    router.push(`/checkout?eventId=${event.id}&ticketType=${selectedTicket}`)
+    const selectedTickets = ticketSelections
+      .filter((s) => s.quantity > 0)
+      .map((s) => `${s.type}:${s.quantity}`)
+      .join(",");
+
+    if (selectedTickets && event) {
+      router.push(`/checkout?eventId=${event.id}&tickets=${selectedTickets}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="container mx-auto px-4 py-8 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      </main>
+    );
   }
+
+  if (!event) {
+    return (
+      <main className="container mx-auto px-4 py-8 text-center">
+        <p className="text-xl font-semibold">Event not found.</p>
+        <Link href="/events" className="text-purple-600 hover:underline">
+          ← Back to Events
+        </Link>
+      </main>
+    );
+  }
+
+  const hasDiscount = event.tickets.some((ticket) => ticket.discount > 0);
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -188,7 +124,7 @@ export default function EventDetailPage({ params }: PageProps) {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Event Details */}
         <div className="lg:col-span-2">
-          <div className="mb-6 overflow-hidden rounded-lg">
+          <div className="mb-6 overflow-hidden rounded-lg relative">
             <Image
               src={event.image || "/placeholder.svg"}
               alt={event.title}
@@ -196,6 +132,13 @@ export default function EventDetailPage({ params }: PageProps) {
               height={600}
               className="w-full object-cover"
             />
+            {hasDiscount && (
+              <div className="absolute top-4 left-4">
+                <Badge className="bg-green-600 text-white px-3 py-1 text-sm">
+                  Special Offer
+                </Badge>
+              </div>
+            )}
           </div>
 
           <h1 className="mb-4 text-3xl font-bold">{event.title}</h1>
@@ -207,7 +150,7 @@ export default function EventDetailPage({ params }: PageProps) {
             </div>
             <div className="flex items-center">
               <Clock className="mr-2 h-5 w-5 text-gray-500" />
-              <span>{event.time}</span>
+              <span>{event.time || "TBD"}</span>
             </div>
             <div className="flex items-center">
               <MapPin className="mr-2 h-5 w-5 text-gray-500" />
@@ -232,31 +175,99 @@ export default function EventDetailPage({ params }: PageProps) {
               <CardContent className="p-6">
                 <h2 className="mb-4 text-xl font-semibold">Select Tickets</h2>
 
-                <RadioGroup value={selectedTicket} onValueChange={setSelectedTicket} className="space-y-4">
-                  {event.tickets.map((ticket) => (
-                    <div key={ticket.type} className="rounded-lg border p-4">
-                      <div className="flex items-start space-x-3">
-                        <RadioGroupItem value={ticket.type} id={ticket.type} className="mt-1" />
+                {hasDiscount && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 text-sm font-medium">
+                      Special offer available! Limited time discounts on select
+                      tickets.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {event.tickets.map((ticket) => {
+                    const typeKey = ticket.name.toLowerCase().replace(/\s+/g, "-");
+                    const selection = ticketSelections.find(
+                      (s) => s.type === typeKey
+                    );
+                    const quantity = selection ? selection.quantity : 0;
+                    const discountedPrice =
+                      ticket.discount > 0 ? ticket.price - ticket.discount : ticket.price;
+
+                    return (
+                      <div key={typeKey} className="rounded-lg border p-4">
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <Label htmlFor={ticket.type} className="text-lg font-medium">
-                              {ticket.name}
-                            </Label>
-                            <span className="font-bold">${ticket.price}</span>
+                            <Label className="text-lg font-medium">{ticket.name}</Label>
+                            <div className="text-right">
+                              {ticket.discount > 0 ? (
+                                <div>
+                                  <span className="font-bold text-green-600">
+                                    ${discountedPrice.toFixed(2)}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm line-through text-gray-500">
+                                      ${ticket.price.toFixed(2)}
+                                    </span>
+                                    <Badge className="bg-green-100 text-green-800">
+                                      Save {(
+                                        (ticket.discount / ticket.price) *
+                                        100
+                                      ).toFixed(0)}
+                                      %
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="font-bold">${ticket.price.toFixed(2)}</span>
+                              )}
+                            </div>
                           </div>
                           <p className="text-sm text-gray-500">{ticket.description}</p>
-                          {ticket.type === "vip" && (
-                            <Badge className="mt-2 bg-purple-100 text-purple-800">Limited Availability</Badge>
-                          )}
+                          <div className="mt-4 flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleQuantityChange(typeKey, -1)}
+                              disabled={quantity === 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Input
+                              type="number"
+                              value={quantity}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value) || 0);
+                                const delta = val - quantity;
+                                handleQuantityChange(typeKey, delta);
+                              }}
+                              className="w-16 text-center"
+                              min={0}
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleQuantityChange(typeKey, 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </RadioGroup>
+                    );
+                  })}
+                </div>
 
-                <Button onClick={handleBuyTicket} className="mt-6 w-full">
-                  Buy Now
-                </Button>
+                <div className="mt-6">
+                  <p className="text-lg font-semibold">Total: ${totalPrice.toFixed(2)}</p>
+                  <Button
+                    onClick={handleBuyTicket}
+                    className="mt-2 w-full"
+                    disabled={totalPrice === 0}
+                  >
+                    Buy Now
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -270,5 +281,5 @@ export default function EventDetailPage({ params }: PageProps) {
         </div>
       </div>
     </main>
-  )
+  );
 }

@@ -1,48 +1,124 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, MapPinIcon, PlusIcon, TicketIcon, UsersIcon } from "lucide-react"
+"use client";
+
+import Link from "next/link";
+import { useState, useEffect } from "react";
+// import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  CalendarIcon,
+  MapPinIcon,
+  PlusIcon,
+  TicketIcon,
+  UsersIcon,
+  Trash2Icon,
+} from "lucide-react";
+import { CategoryList } from "@/components/categories/category-list";
+import { fetchEvents, Event, deleteEvent } from "@/lib/events";
+// import Image from "next/image";
 
 export default function OrganizerDashboardPage() {
-  // Mock organizer data - in a real app, this would be fetched from an API
+  // const router = useRouter();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+
+  // Mock organizer data
   const organizer = {
     name: "Music Events Inc.",
     email: "contact@musicevents.com",
-  }
+  };
 
-  // Mock events data - in a real app, this would be fetched from an API
-  const events = [
-    {
-      id: "1",
-      title: "Summer Music Festival",
-      date: "June 15, 2025",
-      location: "Central Park, New York",
-      status: "active",
-      ticketsSold: 245,
-      revenue: 12250.55,
-    },
-    {
-      id: "2",
-      title: "Jazz Night",
-      date: "July 20, 2025",
-      location: "Blue Note, New York",
-      status: "draft",
-      ticketsSold: 0,
-      revenue: 0,
-    },
-  ]
+  useEffect(() => {
+    const loadEvents = async () => {
+      setIsLoading(true);
+      const fetchedEvents = await fetchEvents();
+      setEvents(fetchedEvents);
+      setIsLoading(false);
+    };
+    loadEvents();
+  }, []);
 
-  // Mock categories data - in a real app, this would be fetched from an API
-  const categories = [
-    { id: "1", name: "Music", eventCount: 5 },
-    { id: "2", name: "Concerts", eventCount: 3 },
-    { id: "3", name: "Festivals", eventCount: 2 },
-  ]
+  const openDeleteDialog = (eventId: string, eventTitle: string) => {
+    setEventToDelete({ id: eventId, title: eventTitle });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!eventToDelete) return;
+
+    try {
+      await deleteEvent(eventToDelete.id);
+      setEvents((ev) =>
+        ev.filter((e) => e.id !== eventToDelete.id)
+      );
+      toast.success("Event deleted successfully!", {
+        description: `"${eventToDelete.title}" has been deleted.`,
+      });
+    } catch {
+      toast.error("Failed to delete event", {
+        description:
+          "An error occurred while deleting the event. Please try again.",
+      });
+    } finally {
+      setIsDialogOpen(false);
+      setEventToDelete(null);
+    }
+  };
+
+  // Stats
+  const totalEvents = events.length;
+  const totalTicketsSold = events.reduce(
+    (sum, e) =>
+      sum +
+      e.tickets.reduce(
+        (ts, t) => ts + (t.quantity_available || 0),
+        0
+      ),
+    0
+  );
+  const totalRevenue = events.reduce(
+    (sum, e) =>
+      sum +
+      e.tickets.reduce((ts, t) => {
+        const dp = t.price * (1 - t.discount / 100);
+        return ts + dp * (t.quantity_available || 0);
+      }, 0),
+    0
+  );
+  const totalAttendees = totalTicketsSold;
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Header */}
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold">Organizer Dashboard</h1>
@@ -60,42 +136,35 @@ export default function OrganizerDashboardPage() {
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="flex flex-col items-center p-6">
-            <div className="mb-2 rounded-full bg-purple-100 p-3">
-              <CalendarIcon className="h-6 w-6 text-purple-700" />
-            </div>
-            <h3 className="text-xl font-bold">2</h3>
+            <CalendarIcon className="mb-2 h-6 w-6 text-purple-700" />
+            <h3 className="text-xl font-bold">{totalEvents}</h3>
             <p className="text-sm text-gray-500">Total Events</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex flex-col items-center p-6">
-            <div className="mb-2 rounded-full bg-purple-100 p-3">
-              <TicketIcon className="h-6 w-6 text-purple-700" />
-            </div>
-            <h3 className="text-xl font-bold">245</h3>
+            <TicketIcon className="mb-2 h-6 w-6 text-purple-700" />
+            <h3 className="text-xl font-bold">{totalTicketsSold}</h3>
             <p className="text-sm text-gray-500">Tickets Sold</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex flex-col items-center p-6">
-            <div className="mb-2 rounded-full bg-purple-100 p-3">
-              <UsersIcon className="h-6 w-6 text-purple-700" />
-            </div>
-            <h3 className="text-xl font-bold">210</h3>
+            <UsersIcon className="mb-2 h-6 w-6 text-purple-700" />
+            <h3 className="text-xl font-bold">{totalAttendees}</h3>
             <p className="text-sm text-gray-500">Attendees</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex flex-col items-center p-6">
-            <div className="mb-2 rounded-full bg-purple-100 p-3">
-              <div className="flex h-6 w-6 items-center justify-center text-purple-700">$</div>
-            </div>
-            <h3 className="text-xl font-bold">$12,250.55</h3>
+            <div className="mb-2 flex h-6 w-6 items-center justify-center text-purple-700">$</div>
+            <h3 className="text-xl font-bold">${totalRevenue.toFixed(2)}</h3>
             <p className="text-sm text-gray-500">Total Revenue</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="events" className="space-y-6">
         <TabsList>
           <TabsTrigger value="events">Events</TabsTrigger>
@@ -111,7 +180,13 @@ export default function OrganizerDashboardPage() {
             </Button>
           </div>
 
-          {events.length > 0 ? (
+          {isLoading ? (
+            <Card>
+              <CardContent className="flex justify-center py-8 text-center">
+                Loading events…
+              </CardContent>
+            </Card>
+          ) : events.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {events.map((event) => (
                 <Card key={event.id}>
@@ -119,38 +194,122 @@ export default function OrganizerDashboardPage() {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle>{event.title}</CardTitle>
-                        <CardDescription>{event.date}</CardDescription>
+                        <CardDescription>
+                          {event.date} • {event.time}
+                        </CardDescription>
                       </div>
                       <Badge
                         className={
-                          event.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          event.tickets.some((t) => t.quantity_available > 0)
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
                         }
                       >
-                        {event.status === "active" ? "Active" : "Draft"}
+                        {event.tickets.some((t) => t.quantity_available > 0)
+                          ? "Active"
+                          : "Draft"}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    {event.image && (
+                      <img
+                        
+                        src={event.image}
+                        alt={`${event.title} image`}
+                        className="w-full h-40 object-cover rounded-md mb-4"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder-image.png";
+                          e.currentTarget.onerror = null;
+                        }}
+                      />
+                    )}
                     <div className="flex items-center">
                       <MapPinIcon className="mr-2 h-4 w-4 text-gray-500" />
-                      <span className="text-sm">{event.location}</span>
+                      <span>{event.location}</span>
                     </div>
                     <div className="flex items-center">
                       <TicketIcon className="mr-2 h-4 w-4 text-gray-500" />
-                      <span className="text-sm">{event.ticketsSold} tickets sold</span>
+                      <span>
+                        {event.tickets.reduce(
+                          (s, t) => s + (t.quantity_available || 0),
+                          0
+                        )}{" "}
+                        tickets available
+                      </span>
                     </div>
                     <div className="flex items-center">
-                      <div className="mr-2 flex h-4 w-4 items-center justify-center text-gray-500">$</div>
-                      <span className="text-sm">${event.revenue.toFixed(2)} revenue</span>
+                      <div className="mr-2 flex h-4 w-4 items-center justify-center text-gray-500">
+                        $
+                      </div>
+                      <span>
+                        $
+                        {event.tickets
+                          .reduce((s, t) => {
+                            const dp = t.price * (1 - t.discount / 100);
+                            return s + dp * (t.quantity_available || 0);
+                          }, 0)
+                          .toFixed(2)}{" "}
+                        revenue
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500">
+                        Category: {event.category}
+                      </span>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
                     <Button variant="outline" asChild>
                       <Link href={`/organizer/events/${event.id}`}>Manage</Link>
                     </Button>
-                    <Button variant="outline" asChild>
-                      <Link href={`/organizer/events/${event.id}/tickets`}>Tickets</Link>
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" asChild>
+                        <Link href={`/organizer/events/${event.id}/tickets`}>
+                          Tickets
+                        </Link>
+                      </Button>
+                      <Dialog
+                        open={isDialogOpen}
+                        onOpenChange={setIsDialogOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() =>
+                              openDeleteDialog(event.id, event.title)
+                            }
+                          >
+                            <Trash2Icon className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Delete Event</DialogTitle>
+                            <DialogDescription>
+                              Are you sure you want to delete{" "}
+                              {eventToDelete?.title}? This action cannot be
+                              undone.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDelete}
+                            >
+                              Delete
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
@@ -158,64 +317,34 @@ export default function OrganizerDashboardPage() {
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-                <p className="mb-4 text-gray-500">You have not created any events yet</p>
+                <p>You have not created any events yet</p>
                 <Button asChild>
-                  <Link href="/organizer/events/create">Create Event</Link>
+                  <Link href="/organizer/events/create">
+                    Create Event
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="categories" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Your Categories</h2>
-            <Button variant="outline" asChild>
-              <Link href="/organizer/categories/create">Create Category</Link>
-            </Button>
-          </div>
-
-          {categories.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {categories.map((category) => (
-                <Card key={category.id}>
-                  <CardHeader>
-                    <CardTitle>{category.name}</CardTitle>
-                    <CardDescription>{category.eventCount} events</CardDescription>
-                  </CardHeader>
-                  <CardFooter>
-                    <Button variant="outline" asChild>
-                      <Link href={`/organizer/categories/${category.id}`}>Edit</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-                <p className="mb-4 text-gray-500">You have not created any categories yet</p>
-                <Button asChild>
-                  <Link href="/organizer/categories/create">Create Category</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+        <TabsContent value="categories">
+          <CategoryList />
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="settings">
           <h2 className="text-xl font-semibold">Organizer Settings</h2>
           <Card>
             <CardHeader>
               <CardTitle>Organization Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <p className="text-sm font-medium text-gray-500">Organization Name</p>
+              <div>
+                <p className="text-gray-500">Name</p>
                 <p>{organizer.name}</p>
               </div>
-              <div className="grid gap-2">
-                <p className="text-sm font-medium text-gray-500">Email</p>
+              <div>
+                <p className="text-gray-500">Email</p>
                 <p>{organizer.email}</p>
               </div>
             </CardContent>
@@ -226,5 +355,5 @@ export default function OrganizerDashboardPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

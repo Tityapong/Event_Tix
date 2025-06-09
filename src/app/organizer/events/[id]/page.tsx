@@ -95,7 +95,7 @@ export default function ManageEventPage() {
       await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}`, formDataToSend, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
       });
 
@@ -223,7 +223,6 @@ export default function ManageEventPage() {
             <Label htmlFor="image">Event Image</Label>
             {event.image && (
               <img
-                
                 src={event.image}
                 alt={`${event.title} image`}
                 className="w-full h-40 object-cover rounded-md mb-4"

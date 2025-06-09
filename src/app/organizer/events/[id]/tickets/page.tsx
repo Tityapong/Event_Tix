@@ -47,6 +47,7 @@ export default function TicketsPage() {
     setTickets([
       ...tickets,
       {
+        id: 0,
         name: "",
         price: 0,
         discount: 0,

@@ -3,6 +3,7 @@ import { getAuthToken } from "@/lib/auth";
 
 // Define interfaces for the API response
 export interface Ticket {
+  id: number; 
   name: string;
   price: number;
   discount: number;

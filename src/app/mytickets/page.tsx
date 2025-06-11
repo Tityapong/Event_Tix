@@ -69,10 +69,6 @@ export default function MyTicketPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const user = {
-    name: "John Doe",
-    email: "john@example.com",
-  };
 
   const getDayOfWeek = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -243,9 +239,7 @@ export default function MyTicketPage() {
                 My Tickets
               </h1>
             </div>
-            <p className="text-slate-600 font-medium">
-              Welcome back, {user.name} ✨
-            </p>
+    
           </div>
           <Button className="group bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
             <Link href="/events" className="flex items-center gap-2">

@@ -98,6 +98,7 @@ export async function getOrders(): Promise<OrderResponse[]> {
         Authorization: `Bearer ${token}`,
       },
     });
+    console.log("getOrders() fetched:", response.data);
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError && error.response) {

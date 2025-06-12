@@ -1,87 +1,58 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import {
-  MapPinIcon,
-  TicketIcon,
-  QrCodeIcon,
-  UserIcon,
-  Clock3Icon,
-  SparklesIcon,
-  CalendarIcon,
-} from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
-import { Html5Qrcode } from "html5-qrcode";
-import { getOrders, OrderResponse } from "@/lib/order";
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { MapPinIcon, TicketIcon, QrCodeIcon, Clock3Icon, SparklesIcon } from "lucide-react"
+import { QRCodeCanvas } from "qrcode.react"
+import { Html5Qrcode } from "html5-qrcode"
+import { getOrders, type OrderResponse } from "@/lib/order"
 
 // Dashboard-specific ticket interface
 interface DashboardTicket {
-  id: string;
-  eventId: string;
-  eventName: string;
-  date: string;
-  dayOfWeek: string;
-  time: string;
-  location: string;
-  ticketType: string;
-  quantity: number;
-  orderNumber: string;
-  price: number;
-  image: string;
-  purchaseDate: string;
-  scanned: boolean;
+  id: string
+  eventId: string
+  eventName: string
+  date: string
+  dayOfWeek: string
+  time: string
+  location: string
+  ticketType: string
+  quantity: number
+  orderNumber: string
+  price: number
+  image: string
+  purchaseDate: string
+  scanned: boolean
 }
 
 export default function MyTicketPage() {
-  const [selectedTicket, setSelectedTicket] = useState<DashboardTicket | null>(
-    null
-  );
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const [scanResult, setScanResult] = useState<string | null>(null);
-  const [upcomingTickets, setUpcomingTickets] = useState<DashboardTicket[]>(
-    []
-  );
-  const [pastTickets, setPastTickets] = useState<DashboardTicket[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [selectedTicket, setSelectedTicket] = useState<DashboardTicket | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showQR, setShowQR] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scanResult, setScanResult] = useState<string | null>(null)
+  const [upcomingTickets, setUpcomingTickets] = useState<DashboardTicket[]>([])
+  const [pastTickets, setPastTickets] = useState<DashboardTicket[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const getDayOfWeek = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString("en-US", { weekday: "short" });
-  };
+    const date = new Date(dateStr)
+    return date.toLocaleString("en-US", { weekday: "short" })
+  }
 
   useEffect(() => {
     async function fetchOrders() {
-      setIsLoading(true);
-      setError(null);
+      setIsLoading(true)
+      setError(null)
 
       try {
-        const orders: OrderResponse[] = await getOrders();
+        const orders: OrderResponse[] = await getOrders()
         const tickets: DashboardTicket[] = orders.map((order) => ({
           id: order.order_id.toString(),
           eventId: order.order_id.toString(),
@@ -92,132 +63,110 @@ export default function MyTicketPage() {
           location: order.eventLocation,
           ticketType: order.ticketType,
           quantity: order.quantity,
-          orderNumber: `ORD-${order.order_id
-            .toString()
-            .padStart(8, "0")}`,
-          price: parseFloat(order.total),
+          orderNumber: `ORD-${order.order_id.toString().padStart(8, "0")}`,
+          price: Number.parseFloat(order.total),
           image: order.eventImage,
           purchaseDate: order.order_date.split(" ")[0],
           scanned: false,
-        }));
+        }))
 
         // Normalize "today" to midnight
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
         // Pure date-only comparison
-        setUpcomingTickets(
-          tickets.filter((t) => new Date(t.date) >= today)
-        );
-        setPastTickets(
-          tickets.filter((t) => new Date(t.date) < today)
-        );
+        setUpcomingTickets(tickets.filter((t) => new Date(t.date) >= today))
+        setPastTickets(tickets.filter((t) => new Date(t.date) < today))
 
-        localStorage.setItem("purchasedTickets", JSON.stringify(tickets));
+        localStorage.setItem("purchasedTickets", JSON.stringify(tickets))
       } catch (err) {
-        console.error("Error fetching orders:", err);
-        setError("Failed to load tickets. Showing cached tickets if available.");
+        console.error("Error fetching orders:", err)
+        setError("Failed to load tickets. Showing cached tickets if available.")
 
-        const storedTickets = JSON.parse(
-          localStorage.getItem("purchasedTickets") || "[]"
-        ) as DashboardTicket[];
+        const storedTickets = JSON.parse(localStorage.getItem("purchasedTickets") || "[]") as DashboardTicket[]
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
-        setUpcomingTickets(
-          storedTickets.filter((t) => new Date(t.date) >= today)
-        );
-        setPastTickets(
-          storedTickets.filter((t) => new Date(t.date) < today)
-        );
+        setUpcomingTickets(storedTickets.filter((t) => new Date(t.date) >= today))
+        setPastTickets(storedTickets.filter((t) => new Date(t.date) < today))
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    fetchOrders();
-  }, []);
+    fetchOrders()
+  }, [])
 
   useEffect(() => {
     if (showScanner && selectedTicket) {
-      const html5QrCode = new Html5Qrcode("qr-reader");
+      const html5QrCode = new Html5Qrcode("qr-reader")
       const qrCodeSuccessCallback = (decodedText: string) => {
-        setScanResult(decodedText);
+        setScanResult(decodedText)
         html5QrCode.stop().then(() => {
           try {
-            const qrData = JSON.parse(decodedText);
-            if (
-              qrData.ticketId === selectedTicket.id &&
-              qrData.orderNumber === selectedTicket.orderNumber
-            ) {
+            const qrData = JSON.parse(decodedText)
+            if (qrData.ticketId === selectedTicket.id && qrData.orderNumber === selectedTicket.orderNumber) {
               const updated = [...upcomingTickets, ...pastTickets].map((t) =>
-                t.id === selectedTicket.id ? { ...t, scanned: true } : t
-              );
-              localStorage.setItem(
-                "purchasedTickets",
-                JSON.stringify(updated)
-              );
+                t.id === selectedTicket.id ? { ...t, scanned: true } : t,
+              )
+              localStorage.setItem("purchasedTickets", JSON.stringify(updated))
               // re-split by date-only again
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              setUpcomingTickets(
-                updated.filter((t) => new Date(t.date) >= today)
-              );
-              setPastTickets(
-                updated.filter((t) => new Date(t.date) < today)
-              );
-              setSelectedTicket({ ...selectedTicket, scanned: true });
-              setShowScanner(false);
-              setScanResult("Ticket successfully scanned!");
+              const today = new Date()
+              today.setHours(0, 0, 0, 0)
+              setUpcomingTickets(updated.filter((t) => new Date(t.date) >= today))
+              setPastTickets(updated.filter((t) => new Date(t.date) < today))
+              setSelectedTicket({ ...selectedTicket, scanned: true })
+              setShowScanner(false)
+              setScanResult("Ticket successfully scanned!")
             } else {
-              setScanResult("Invalid QR code!");
+              setScanResult("Invalid QR code!")
             }
           } catch {
-            setScanResult("Error parsing QR code!");
+            setScanResult("Error parsing QR code!")
           }
-        });
-      };
+        })
+      }
       const qrCodeErrorCallback = (error: string) => {
-        console.error(error);
-      };
+        console.error(error)
+      }
 
       html5QrCode
         .start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           qrCodeSuccessCallback,
-          qrCodeErrorCallback
+          qrCodeErrorCallback,
         )
         .catch((err) => {
-          setScanResult("Failed to start scanner: " + err);
-        });
+          setScanResult("Failed to start scanner: " + err)
+        })
 
       return () => {
-        html5QrCode.stop().catch((err) => console.error("Failed to stop scanner", err));
-      };
+        html5QrCode.stop().catch((err) => console.error("Failed to stop scanner", err))
+      }
     }
-  }, [showScanner, selectedTicket, upcomingTickets, pastTickets]);
+  }, [showScanner, selectedTicket, upcomingTickets, pastTickets])
 
   const handleViewTicket = (ticket: DashboardTicket) => {
-    setSelectedTicket(ticket);
-    setIsDialogOpen(true);
-    setShowQR(false);
-    setShowScanner(false);
-    setScanResult(null);
-  };
+    setSelectedTicket(ticket)
+    setIsDialogOpen(true)
+    setShowQR(false)
+    setShowScanner(false)
+    setScanResult(null)
+  }
 
   const toggleQRCode = () => {
-    setShowQR(!showQR);
-    setShowScanner(false);
-    setScanResult(null);
-  };
+    setShowQR(!showQR)
+    setShowScanner(false)
+    setScanResult(null)
+  }
 
   const toggleScanner = () => {
-    setShowScanner(!showScanner);
-    setShowQR(false);
-    setScanResult(null);
-  };
+    setShowScanner(!showScanner)
+    setShowQR(false)
+    setScanResult(null)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
@@ -239,7 +188,6 @@ export default function MyTicketPage() {
                 My Tickets
               </h1>
             </div>
-    
           </div>
           <Button className="group bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
             <Link href="/events" className="flex items-center gap-2">
@@ -251,11 +199,66 @@ export default function MyTicketPage() {
 
         {/* Loading & Error */}
         {isLoading && (
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full mb-4">
-              <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="h-8 w-48 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg animate-pulse"></div>
+              <div className="h-8 w-20 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-full animate-pulse"></div>
             </div>
-            <p className="text-slate-600 font-medium">Loading your tickets...</p>
+
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className="overflow-hidden border-0 bg-white/80 backdrop-blur-lg shadow-xl rounded-lg">
+                  {/* Image skeleton */}
+                  <div className="relative h-48 w-full bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 animate-pulse">
+                    {/* Date badge skeleton */}
+                    <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg">
+                      <div className="text-center space-y-1">
+                        <div className="h-6 w-8 bg-slate-300 rounded animate-pulse"></div>
+                        <div className="h-3 w-12 bg-slate-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+
+                    {/* Quantity badge skeleton */}
+                    <div className="absolute top-4 right-4 h-6 w-8 bg-slate-300 rounded-full animate-pulse"></div>
+                  </div>
+
+                  {/* Content skeleton */}
+                  <div className="space-y-4 p-6">
+                    {/* Title */}
+                    <div className="h-6 w-3/4 bg-gradient-to-r from-slate-200 to-slate-300 rounded animate-pulse"></div>
+
+                    {/* Ticket type */}
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 bg-purple-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+
+                    {/* Time */}
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 bg-purple-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-24 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+
+                    {/* Location */}
+                    <div className="flex items-center gap-3">
+                      <div className="h-6 w-6 bg-purple-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-32 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+
+                    {/* Price and order number */}
+                    <div className="flex items-center justify-between">
+                      <div className="h-8 w-20 bg-gradient-to-r from-green-200 to-emerald-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-16 bg-slate-200 rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+
+                  {/* Button skeleton */}
+                  <div className="px-6 pb-6">
+                    <div className="w-full h-12 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-xl animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {error && (
@@ -268,36 +271,26 @@ export default function MyTicketPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="upcoming" className="space-y-8">
-          <TabsList className="bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl rounded-2xl p-2 w-full justify-start">
+          <TabsList className="bg-white border border-gray-200 rounded-lg p-1 w-fit">
             <TabsTrigger
               value="upcoming"
-              className="rounded-xl px-6 py-3 font-semibold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-purple-600 data-[state=active]:text-white"
             >
-              <CalendarIcon className="h-4 w-4 mr-2" />
               Upcoming
             </TabsTrigger>
             <TabsTrigger
               value="past"
-              className="rounded-xl px-6 py-3 font-semibold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-purple-600 data-[state=active]:text-white"
             >
-              <Clock3Icon className="h-4 w-4 mr-2" />
               Past Events
             </TabsTrigger>
-            <TabsTrigger
-              value="profile"
-              className="rounded-xl px-6 py-3 font-semibold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              <UserIcon className="h-4 w-4 mr-2" />
-              Profile
-            </TabsTrigger>
+         
           </TabsList>
 
           {/* Upcoming */}
           <TabsContent value="upcoming" className="space-y-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-800">
-                Your Upcoming Events
-              </h2>
+              <h2 className="text-2xl font-bold text-slate-800">Your Upcoming Events</h2>
               <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 px-4 py-2 text-sm font-semibold shadow-lg">
                 {upcomingTickets.length} Tickets
               </Badge>
@@ -306,14 +299,11 @@ export default function MyTicketPage() {
             {upcomingTickets.length > 0 ? (
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {upcomingTickets.map((ticket) => (
-                  <Card
-                    key={ticket.id}
-                    className="overflow-hidden border-0 bg-white/80 backdrop-blur-lg shadow-xl"
-                  >
+                  <Card key={ticket.id} className="overflow-hidden border-0 bg-white/80 backdrop-blur-lg shadow-xl">
                     <div className="relative h-48 w-full overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-indigo-600/60 to-pink-600/40">
                         <img
-                          src={ticket.image}
+                          src={ticket.image || "/placeholder.svg"}
                           alt={ticket.eventName}
                           className="h-full w-full object-cover"
                         />
@@ -326,8 +316,7 @@ export default function MyTicketPage() {
                             {ticket.date.split(" ")[0]}
                           </div>
                           <div className="text-xs text-slate-600 font-medium">
-                            {ticket.dayOfWeek}{" "}
-                            {ticket.date.split(" ")[2]}
+                            {ticket.dayOfWeek} {ticket.date.split(" ")[2]}
                           </div>
                         </div>
                       </div>
@@ -338,9 +327,7 @@ export default function MyTicketPage() {
                     </div>
 
                     <CardContent className="space-y-4 pb-4">
-                      <CardTitle className="text-xl font-bold text-slate-800">
-                        {ticket.eventName}
-                      </CardTitle>
+                      <CardTitle className="text-xl font-bold text-slate-800">{ticket.eventName}</CardTitle>
                       <CardDescription className="flex items-center gap-2 text-slate-600 font-medium">
                         <div className="p-1 rounded-md bg-purple-100">
                           <TicketIcon className="h-3 w-3 text-purple-600" />
@@ -357,9 +344,7 @@ export default function MyTicketPage() {
                         <div className="p-1 rounded-md bg-purple-100 mr-3">
                           <MapPinIcon className="h-4 w-4 text-purple-600" />
                         </div>
-                        <span className="text-sm font-medium">
-                          {ticket.location}
-                        </span>
+                        <span className="text-sm font-medium">{ticket.location}</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -389,12 +374,9 @@ export default function MyTicketPage() {
                   <div className="mb-6 p-6 rounded-3xl bg-gradient-to-br from-purple-100 to-indigo-100">
                     <TicketIcon className="h-12 w-12 text-purple-500" />
                   </div>
-                  <h3 className="mb-3 text-2xl font-bold text-slate-800">
-                    No Upcoming Tickets
-                  </h3>
+                  <h3 className="mb-3 text-2xl font-bold text-slate-800">No Upcoming Tickets</h3>
                   <p className="mb-8 text-slate-600 max-w-md">
-                    Ready for your next adventure? Discover amazing events
-                    happening near you!
+                    Ready for your next adventure? Discover amazing events happening near you!
                   </p>
                   <Button
                     asChild
@@ -410,9 +392,7 @@ export default function MyTicketPage() {
           {/* Past Events */}
           <TabsContent value="past" className="space-y-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-800">
-                Your Past Events
-              </h2>
+              <h2 className="text-2xl font-bold text-slate-800">Your Past Events</h2>
               <Badge className="bg-gradient-to-r from-slate-500 to-gray-500 text-white border-0 px-4 py-2 text-sm font-semibold shadow-lg">
                 {pastTickets.length} Tickets
               </Badge>
@@ -421,29 +401,21 @@ export default function MyTicketPage() {
             {pastTickets.length > 0 ? (
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {pastTickets.map((ticket) => (
-                  <Card
-                    key={ticket.id}
-                    className="overflow-hidden border-0 bg-white/80 backdrop-blur-lg shadow-xl"
-                  >
+                  <Card key={ticket.id} className="overflow-hidden border-0 bg-white/80 backdrop-blur-lg shadow-xl">
                     {/* …you can mirror the same card structure as Upcoming… */}
                     <CardContent className="space-y-4 pb-4">
-                      <CardTitle className="text-xl font-bold text-slate-800">
-                        {ticket.eventName}
-                      </CardTitle>
+                      <CardTitle className="text-xl font-bold text-slate-800">{ticket.eventName}</CardTitle>
                       <CardDescription className="flex items-center gap-2 text-slate-600 font-medium">
                         <div className="p-1 rounded-md bg-purple-100">
                           <Clock3Icon className="h-3 w-3 text-purple-600" />
                         </div>
-                        {ticket.dayOfWeek}, {ticket.date.split(" ")[0]} at{" "}
-                        {ticket.time}
+                        {ticket.dayOfWeek}, {ticket.date.split(" ")[0]} at {ticket.time}
                       </CardDescription>
                       <div className="flex items-center text-slate-700">
                         <div className="p-1 rounded-md bg-purple-100 mr-3">
                           <MapPinIcon className="h-4 w-4 text-purple-600" />
                         </div>
-                        <span className="text-sm font-medium">
-                          {ticket.location}
-                        </span>
+                        <span className="text-sm font-medium">{ticket.location}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="text-2xl font-bold bg-gradient-to-r from-slate-600 to-gray-600 bg-clip-text text-transparent">
@@ -460,21 +432,15 @@ export default function MyTicketPage() {
             ) : (
               <Card className="border-0 bg-white/80 backdrop-blur-lg shadow-xl">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <h3 className="mb-3 text-2xl font-bold text-slate-800">
-                    No Past Events
-                  </h3>
-                  <p className="mb-8 text-slate-600 max-w-md">
-                    Looks like you haven’t attended any events yet.
-                  </p>
+                  <h3 className="mb-3 text-2xl font-bold text-slate-800">No Past Events</h3>
+                  <p className="mb-8 text-slate-600 max-w-md">Looks like you haven’t attended any events yet.</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          {/* Profile */}
-          <TabsContent value="profile" className="space-y-8">
-            {/* Your profile UI */}
-          </TabsContent>
+   
+       
         </Tabs>
       </div>
 
@@ -495,21 +461,14 @@ export default function MyTicketPage() {
                   <div className="bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-4xl font-bold">
-                          {selectedTicket.date.split(" ")[0]}
-                        </span>
+                        <span className="text-4xl font-bold">{selectedTicket.date.split(" ")[0]}</span>
                         <span className="text-purple-100 font-medium">
-                          {selectedTicket.dayOfWeek},{" "}
-                          {selectedTicket.date.split(" ")[2]}
+                          {selectedTicket.dayOfWeek}, {selectedTicket.date.split(" ")[2]}
                         </span>
-                        <span className="text-purple-200 font-medium mt-1">
-                          {selectedTicket.time}
-                        </span>
+                        <span className="text-purple-200 font-medium mt-1">{selectedTicket.time}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold">
-                          ${selectedTicket.price.toFixed(2)}
-                        </div>
+                        <div className="text-2xl font-bold">${selectedTicket.price.toFixed(2)}</div>
                         <div className="text-lg font-semibold bg-white/20 px-3 py-1 rounded-full">
                           {selectedTicket.ticketType}
                         </div>
@@ -524,12 +483,8 @@ export default function MyTicketPage() {
                         <TicketIcon className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <div className="font-bold text-slate-800">
-                          {selectedTicket.eventName}
-                        </div>
-                        <div className="text-sm text-slate-600 font-medium">
-                          {selectedTicket.location}
-                        </div>
+                        <div className="font-bold text-slate-800">{selectedTicket.eventName}</div>
+                        <div className="text-sm text-slate-600 font-medium">{selectedTicket.location}</div>
                       </div>
                     </div>
                     <div className="text-center">
@@ -596,25 +551,19 @@ export default function MyTicketPage() {
                         <div className="p-2 rounded-xl bg-purple-100 mr-4">
                           <MapPinIcon className="h-5 w-5 text-purple-600" />
                         </div>
-                        <span className="font-medium">
-                          {selectedTicket.location}
-                        </span>
+                        <span className="font-medium">{selectedTicket.location}</span>
                       </div>
                       <div className="flex items-center text-slate-700">
                         <div className="p-2 rounded-xl bg-indigo-100 mr-4">
                           <TicketIcon className="h-5 w-5 text-indigo-600" />
                         </div>
-                        <span className="font-medium">
-                          Order #{selectedTicket.orderNumber}
-                        </span>
+                        <span className="font-medium">Order #{selectedTicket.orderNumber}</span>
                       </div>
                       <div className="flex items-center text-slate-700">
                         <div className="p-2 rounded-xl bg-emerald-100 mr-4">
                           <Clock3Icon className="h-5 w-5 text-emerald-600" />
                         </div>
-                        <span className="font-medium">
-                          Purchased on {selectedTicket.purchaseDate}
-                        </span>
+                        <span className="font-medium">Purchased on {selectedTicket.purchaseDate}</span>
                       </div>
                       <div className="flex items-center text-slate-700">
                         <div className="p-2 rounded-xl bg-blue-100 mr-4">
@@ -623,13 +572,9 @@ export default function MyTicketPage() {
                         <span className="font-medium">
                           Status:{" "}
                           {selectedTicket.scanned ? (
-                            <span className="text-green-600 font-semibold">
-                              ✓ Scanned
-                            </span>
+                            <span className="text-green-600 font-semibold">✓ Scanned</span>
                           ) : (
-                            <span className="text-orange-600 font-semibold">
-                              ⏳ Not Scanned
-                            </span>
+                            <span className="text-orange-600 font-semibold">⏳ Not Scanned</span>
                           )}
                         </span>
                       </div>
@@ -660,5 +605,5 @@ export default function MyTicketPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

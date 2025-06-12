@@ -109,7 +109,7 @@ import {  MapPin, User, Clock, Tag } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+
 
 interface Ticket {
   name: string;
@@ -145,10 +145,10 @@ export default function EventCard({ event }: EventCardProps) {
     <Card className="group relative overflow-hidden rounded-2xl border-none p-0 shadow-sm transition-all duration-300 hover:shadow-xl">
       <div className="relative h-56 w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10" />
-        <Image
+        <img
           src={event.image || "/placeholder.svg"} 
           alt={event.title} 
-          fill         
+                 
           className="object-cover transition-transform duration-700 group-hover:scale-110" 
         />
         {event.category && (

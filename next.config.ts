@@ -1,31 +1,35 @@
-// import type { NextConfig } from "next";
-
-// const nextConfig: NextConfig = {
-//   /* config options here */
-//   images: {
-//     domains: ['127.0.0.1'],
-//   },
-// };
-
-// export default nextConfig;
-
+// next.config.js
 import type { NextConfig } from "next";
 
-const localDomains = ['127.0.0.1', 'localhost'];
-const productionDomains = ['etickets.rnt.linkpc.net'];
+const localDomains = ["127.0.0.1", "localhost"];
+const productionDomains = [
+      
+  "etickets.ticket.publicvm.com",      // the publicvm.com host that your images actually live on
+];
 
 const nextConfig: NextConfig = {
   images: {
-    // Dynamically set domains based on environment
-    domains: process.env.NODE_ENV === 'production' ? productionDomains : localDomains,
+    // in dev use localDomains, in prod allow both of yours
+    domains:
+      process.env.NODE_ENV === "production"
+        ? productionDomains
+        : localDomains,
 
-    // (optional) Use remotePatterns for more flexibility, especially with next/image or HTTP
+    // —–– or, instead of `domains`, you can use remotePatterns:
+    //
     // remotePatterns: [
     //   {
-    //     protocol: 'http',
-    //     hostname: 'etickets.rnt.linkpc.net',
-    //     port: '',
-    //     pathname: '/**',
+    //     protocol: "https",
+    //     hostname: "etickets.rnt.linkpc.net",
+    //     port: "",
+    //     pathname: "/**",
+    //   },
+    //   {
+    //     protocol: "https",
+    //     hostname: "etickets.ticket.publicvm.com",
+    //     port: "",
+    //     // only the folder(s) you need
+    //     pathname: "/storage/events/**",
     //   },
     // ],
   },

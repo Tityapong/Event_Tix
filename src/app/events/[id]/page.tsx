@@ -18,6 +18,103 @@ interface TicketSelection {
   quantity: number
 }
 
+// Skeleton Components
+function EventDetailSkeleton() {
+  return (
+    <main className="container mx-auto px-4 py-8">
+      {/* Back link skeleton */}
+      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
+
+      <div className="grid gap-8 lg:grid-cols-3 mt-4">
+        {/* Event Details Skeleton */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Image skeleton */}
+          <div className="relative overflow-hidden rounded-lg">
+            <div className="w-full h-96 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 animate-pulse">
+              {/* Special offer badge skeleton */}
+              <div className="absolute top-4 left-4 bg-gray-300 rounded px-3 py-1 h-6 w-24 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Title skeleton */}
+          <div className="h-8 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+
+          {/* Event details grid skeleton */}
+          <div className="grid grid-cols-2 gap-4">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* About section skeleton */}
+          <div className="space-y-3">
+            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-5/6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-4/5 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ticket Selection Skeleton */}
+        <div>
+          <Card>
+            <CardContent className="space-y-4 p-6">
+              {/* Title skeleton */}
+              <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+
+              {/* Special offer notification skeleton */}
+              <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg">
+                <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+
+              {/* Ticket options skeleton */}
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-3">
+                  {/* Ticket header */}
+                  <div className="flex justify-between items-start">
+                    <div className="h-5 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="text-right space-y-1">
+                      <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="flex items-center space-x-2">
+                        <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description skeleton */}
+                  <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+
+                  {/* Available skeleton */}
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+
+                  {/* Quantity controls skeleton */}
+                  <div className="flex items-center space-x-2">
+                    <div className="h-9 w-9 bg-gray-200 rounded border animate-pulse"></div>
+                    <div className="h-9 w-16 bg-gray-200 rounded border animate-pulse"></div>
+                    <div className="h-9 w-9 bg-gray-200 rounded border animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Total and button skeleton */}
+              <div className="mt-4 space-y-2">
+                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </main>
+  )
+}
+
 export default function EventDetailPage() {
   const router = useRouter()
   const { id: eventId } = useParams() as { id?: string }
@@ -132,12 +229,9 @@ export default function EventDetailPage() {
     }
   }
 
+  // Show skeleton while loading
   if (loading) {
-    return (
-      <main className="container mx-auto p-8 flex justify-center items-center">
-        <div className="animate-spin h-12 w-12 border-t-2 border-b-2 border-purple-600 rounded-full" />
-      </main>
-    )
+    return <EventDetailSkeleton />
   }
 
   if (!event) {

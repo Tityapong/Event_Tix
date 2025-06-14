@@ -615,7 +615,7 @@
 "use client"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
-import Image from "next/image"
+// import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -1199,7 +1199,7 @@ export default function MyTicketPage() {
                   <div className="flex flex-col items-center justify-center bg-gradient-to-br from-white to-slate-50 p-8">
                     {selectedTicket.qr_code ? (
                       <div className="mb-6 p-4 bg-white rounded-2xl shadow-lg">
-                        <Image
+                        <img
                           src={selectedTicket.qr_code || "/placeholder.svg"}
                           alt="QR code for ticket"
                           width={200}

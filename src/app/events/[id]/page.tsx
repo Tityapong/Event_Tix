@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Clock, MapPin, User, Plus, Minus } from "lucide-react"
 import { fetchEvents, type Event as EventType } from "@/lib/events"
 import { createOrder, type OrderPayload } from "@/lib/order"
-import Image from "next/image"
+
 
 interface TicketSelection {
   type: string
@@ -257,7 +257,7 @@ export default function EventDetailPage() {
         {/* Event Details */}
         <div className="lg:col-span-2 space-y-6">
           <div className="relative overflow-hidden rounded-lg">
-            <Image
+            <img
               src={event.image || "/placeholder.svg"}
               alt={event.title}
               width={1200}

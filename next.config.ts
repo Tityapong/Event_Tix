@@ -12,7 +12,7 @@
 import type { NextConfig } from "next";
 
 const localDomains = ['127.0.0.1', 'localhost'];
-const productionDomains = ['etickets.rnt.linkpc.net'];
+const productionDomains = ['etickets.ticket.publicvm.com'];
 
 const nextConfig: NextConfig = {
   images: {

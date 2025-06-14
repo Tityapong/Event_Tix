@@ -1,40 +1,3 @@
-// // lib/order.ts
-// import api from "./api";
-// import { getAuthToken } from "./auth";
-
-// export interface OrderPayload {
-//   user_id: number;
-//   ticket_type_id: number;
-//   order_status?: "Cart" | "Confirmed" | "Paid" | "Cancelled";
-//   payment_status?: "Pending" | "Paid" | "Failed";
-//   quantity: number;
-//   price_at_purchase: number;
-//   total_amount: number;
-//   purchased_at?: string;
-//   qr_code?: string | null;
-//   is_scanned?: boolean;
-// }
-
-// export async function createOrder(
-//   payload: OrderPayload
-// ): Promise<OrderPayload & { id: number }> {
-//   const token = getAuthToken();
-//   if (!token) throw new Error("No auth token found; please log in.");
-
-//   try {
-//     // <-- include "/api" here
-//     const response = await api.post("/api/orders", payload, {
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//     return response.data;
-//   } catch (err: any) {
-//     if (err.response?.data?.errors) {
-//       throw new Error(JSON.stringify(err.response.data.errors));
-//     }
-//     throw new Error(err.message || "Order creation failed");
-//   }
-// }
-
 
 
 // src/lib/order.ts
@@ -105,5 +68,27 @@ export async function getOrders(): Promise<OrderResponse[]> {
       throw new Error(JSON.stringify(error.response.data));
     }
     throw new Error("Failed to fetch orders");
+  }
+}
+
+export async function scanQRCode(qrCode: string): Promise<{ message: string; order_id?: number }> {
+  const token = getAuthToken();
+  try {
+    const response = await axios.post(
+      '/scan',
+      { qr_code: qrCode }, // Send the full decoded QR string
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError && error.response) {
+      throw new Error(JSON.stringify(error.response.data));
+    }
+    throw new Error("Failed to scan QR code");
   }
 }

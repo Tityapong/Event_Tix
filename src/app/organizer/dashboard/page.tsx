@@ -286,7 +286,7 @@ export default function OrganizerDashboardPage() {
                   <CardContent className="space-y-2">
                     {event.image && (
                       <img
-                        src={event.image || "/placeholder.svg"}
+                        src={event.image }
                         alt={`${event.title} image`}
                         className="w-full h-40 object-cover rounded-md mb-4"
                         onError={(e) => {

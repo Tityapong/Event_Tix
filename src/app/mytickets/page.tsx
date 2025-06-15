@@ -611,66 +611,70 @@
 // }
 
 
+"use client"
 
-"use client";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import Link from "next/link"
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { MapPinIcon, TicketIcon, QrCodeIcon, Clock3Icon, SparklesIcon, RefreshCwIcon } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
-import { getOrders, scanQRCode, type OrderResponse } from "@/lib/order";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { MapPinIcon, TicketIcon, QrCodeIcon, Clock3Icon, SparklesIcon, RefreshCwIcon } from "lucide-react"
+import { Html5Qrcode } from "html5-qrcode"
+import { getOrders, scanQRCode, type OrderResponse } from "@/lib/order"
+import { toast } from "sonner"
 
 // Dashboard-specific ticket interface
 interface DashboardTicket {
-  id: string;
-  eventId: string;
-  eventName: string;
-  date: string;
-  dayOfWeek: string;
-  time: string;
-  location: string;
-  ticketType: string;
-  quantity: number;
-  orderNumber: string;
-  price: number;
-  image: string;
-  purchaseDate: string;
-  scanned: boolean;
-  qr_code: string | null;
+  id: string
+  eventId: string
+  eventName: string
+  date: string
+  dayOfWeek: string
+  time: string
+  location: string
+  ticketType: string
+  quantity: number
+  orderNumber: string
+  price: number
+  image: string
+  purchaseDate: string
+  scanned: boolean
+  qr_code: string | null
 }
 
 export default function MyTicketPage() {
-  const [selectedTicket, setSelectedTicket] = useState<DashboardTicket | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const [scanResult, setScanResult] = useState<string | null>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [upcomingTickets, setUpcomingTickets] = useState<DashboardTicket[]>([]);
-  const [pastTickets, setPastTickets] = useState<DashboardTicket[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showScanConfirm, setShowScanConfirm] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<DashboardTicket | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showQR, setShowQR] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scanResult, setScanResult] = useState<string | null>(null)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const [upcomingTickets, setUpcomingTickets] = useState<DashboardTicket[]>([])
+  const [pastTickets, setPastTickets] = useState<DashboardTicket[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showScanConfirm, setShowScanConfirm] = useState(false)
+
+  // Refs for better scanner management
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null)
+  const scannerActiveRef = useRef(false)
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const getDayOfWeek = useCallback((dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString("en-US", { weekday: "short" });
-  }, []);
+    const date = new Date(dateStr)
+    return date.toLocaleString("en-US", { weekday: "short" })
+  }, [])
 
   const fetchOrders = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const orders: OrderResponse[] = await getOrders();
+      const orders: OrderResponse[] = await getOrders()
       const tickets: DashboardTicket[] = orders.map((order) => ({
         id: order.order_id.toString(),
         eventId: order.order_id.toString(),
@@ -683,183 +687,231 @@ export default function MyTicketPage() {
         quantity: order.quantity || 1,
         orderNumber: `ORD-${order.order_id.toString().padStart(8, "0")}`,
         price: Number.parseFloat(order.total) || 0,
-        image: order.eventImage ,
+        image: order.eventImage,
         purchaseDate: order.order_date.split(" ")[0] || "",
         scanned: order.is_scanned || false,
         qr_code: order.qr_code || null,
-      }));
+      }))
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
 
-      setUpcomingTickets(tickets.filter((t) => new Date(t.date) >= today));
-      setPastTickets(tickets.filter((t) => new Date(t.date) < today));
+      setUpcomingTickets(tickets.filter((t) => new Date(t.date) >= today))
+      setPastTickets(tickets.filter((t) => new Date(t.date) < today))
 
-      localStorage.setItem("purchasedTickets", JSON.stringify(tickets));
+      localStorage.setItem("purchasedTickets", JSON.stringify(tickets))
     } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError("Failed to load tickets. Showing cached tickets if available.");
+      console.error("Error fetching orders:", err)
+      setError("Failed to load tickets. Showing cached tickets if available.")
 
-      const storedTickets = JSON.parse(localStorage.getItem("purchasedTickets") || "[]") as DashboardTicket[];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const storedTickets = JSON.parse(localStorage.getItem("purchasedTickets") || "[]") as DashboardTicket[]
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
 
-      setUpcomingTickets(storedTickets.filter((t) => new Date(t.date) >= today));
-      setPastTickets(storedTickets.filter((t) => new Date(t.date) < today));
+      setUpcomingTickets(storedTickets.filter((t) => new Date(t.date) >= today))
+      setPastTickets(storedTickets.filter((t) => new Date(t.date) < today))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [getDayOfWeek]);
+  }, [getDayOfWeek])
+
+  // Improved scanner cleanup function
+  const cleanupScanner = useCallback(async () => {
+    if (html5QrCodeRef.current && scannerActiveRef.current) {
+      try {
+        await html5QrCodeRef.current.stop()
+        scannerActiveRef.current = false
+        console.log("Scanner stopped successfully")
+      } catch (err) {
+        console.warn("Scanner cleanup warning:", err)
+        // Force cleanup even if stop() fails
+        scannerActiveRef.current = false
+      }
+    }
+
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current)
+      errorTimeoutRef.current = null
+    }
+  }, [])
+
+  // Enhanced scanner initialization
+  const initializeScanner = useCallback(async () => {
+    if (!selectedTicket || scannerActiveRef.current) return
+
+    try {
+      // Clean up any existing scanner first
+      await cleanupScanner()
+
+      const html5QrCode = new Html5Qrcode("qr-reader")
+      html5QrCodeRef.current = html5QrCode
+
+      const qrCodeSuccessCallback = async (decodedText: string) => {
+        if (!scannerActiveRef.current) return // Prevent processing if scanner was stopped
+
+        console.log("QR Code detected:", decodedText)
+        setIsScanning(true)
+        setScanResult(null)
+        setScanError(null)
+
+        try {
+          // Stop scanner immediately to prevent multiple scans
+          await cleanupScanner()
+
+          let qrData
+          try {
+            qrData = JSON.parse(decodedText)
+            console.log("Parsed QR Data:", qrData)
+          } catch {
+            setScanResult("❌ Invalid QR code format")
+            setIsScanning(false)
+            return
+          }
+
+          if (!decodedText) {
+            setScanResult("❌ No QR code data found")
+            setIsScanning(false)
+            return
+          }
+
+          const scanResponse = await scanQRCode(decodedText)
+          console.log("Scan response:", scanResponse)
+
+          // Update ticket state
+          const updatedTickets = [...upcomingTickets, ...pastTickets].map((t) =>
+            t.id === selectedTicket.id ? { ...t, scanned: true } : t,
+          )
+
+          localStorage.setItem("purchasedTickets", JSON.stringify(updatedTickets))
+
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          setUpcomingTickets(updatedTickets.filter((t) => new Date(t.date) >= today))
+          setPastTickets(updatedTickets.filter((t) => new Date(t.date) < today))
+          setSelectedTicket({ ...selectedTicket, scanned: true })
+
+          setShowScanner(false)
+          setScanResult("✅ Ticket successfully scanned!")
+
+          // Show success toast
+          toast.success("🎉 Scan Successful!", {
+            description: "Your ticket has been successfully scanned and marked as used.",
+            duration: 5000,
+          })
+
+          // Refresh orders after successful scan
+          setTimeout(() => {
+            fetchOrders()
+          }, 1000)
+        } catch (err: unknown) {
+          console.error("Scan error:", err)
+          const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
+          setScanResult(`❌ Scan failed: ${errorMessage}`)
+          toast.error("Scan Failed", {
+            description: errorMessage,
+            duration: 5000,
+          })
+        } finally {
+          setIsScanning(false)
+        }
+      }
+
+      const qrCodeErrorCallback = (error: string) => {
+        // Only show meaningful errors, ignore common detection failures
+        if (
+          !error.includes("No barcode or QR code detected") &&
+          !error.includes("NotFoundException") &&
+          !error.includes("No MultiFormat Readers")
+        ) {
+          console.warn("QR scan error:", error)
+          setScanError("Unable to detect QR code. Please try again.")
+
+          if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current)
+          errorTimeoutRef.current = setTimeout(() => setScanError(null), 3000)
+        }
+      }
+
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10, // Reduced FPS to minimize errors
+          qrbox: { width: 300, height: 300 },
+          aspectRatio: 1.0,
+        },
+        qrCodeSuccessCallback,
+        qrCodeErrorCallback,
+      )
+
+      scannerActiveRef.current = true
+      console.log("Scanner started successfully")
+    } catch (err) {
+      console.error("Failed to start scanner:", err)
+      setScanResult("❌ Failed to start camera. Please check permissions.")
+      setIsScanning(false)
+      toast.error("Camera Error", {
+        description: "Unable to access camera. Please check permissions.",
+        duration: 5000,
+      })
+    }
+  }, [selectedTicket, upcomingTickets, pastTickets, cleanupScanner, fetchOrders])
 
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    fetchOrders()
+  }, [fetchOrders])
 
   useEffect(() => {
     if (showScanner && selectedTicket && typeof window !== "undefined") {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      let errorTimeout: NodeJS.Timeout | null = null;
-
-      const qrCodeSuccessCallback = async (decodedText: string) => {
-        console.log("Decoded QR Code:", decodedText);
-        console.log("Selected Ticket at Scan:", selectedTicket);
-        setIsScanning(true);
-        setScanResult(null);
-        setScanError(null);
-        try {
-          await html5QrCode.stop();
-          let qrData;
-          try {
-            qrData = JSON.parse(decodedText);
-            console.log("Parsed QR Data:", qrData);
-          } catch {
-            setScanResult("Invalid QR code: Not a valid JSON format");
-            setIsScanning(false);
-            return;
-          }
-
-          const qrCodeToScan = decodedText;
-          if (!qrCodeToScan) {
-            setScanResult("Invalid QR code: No QR code data provided");
-            setIsScanning(false);
-            return;
-          }
-          const scanResponse = await scanQRCode(qrCodeToScan);
-
-          const updatedTickets = [...upcomingTickets, ...pastTickets].map((t) =>
-            t.id === selectedTicket.id ? { ...t, scanned: true } : t,
-          );
-          localStorage.setItem("purchasedTickets", JSON.stringify(updatedTickets));
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          setUpcomingTickets(updatedTickets.filter((t) => new Date(t.date) >= today));
-          setPastTickets(updatedTickets.filter((t) => new Date(t.date) < today));
-          setSelectedTicket({ ...selectedTicket, scanned: true });
-
-          setShowScanner(false);
-
-          console.log("Scan response:", scanResponse);
-          console.log("About to show toast...");
-
-          setTimeout(() => {
-            console.log("Calling toast.success now...");
-            toast.success("🎉 Scan Successful!", {
-              description: "Your ticket has been successfully scanned and marked as used.",
-              duration: 5000,
-              position: "top-center",
-            });
-          }, 100);
-
-          setScanResult("✅ Ticket successfully scanned!");
-
-          setTimeout(async () => {
-            await fetchOrders();
-          }, 500);
-        } catch (err: unknown) {
-          console.error("Scan error details:", err);
-          const errorMessage = err instanceof Error ? err.message : "Unknown error";
-          setScanResult(`Error scanning QR code: ${errorMessage}`);
-        } finally {
-          setIsScanning(false);
-        }
-      };
-
-      const qrCodeErrorCallback = (error: string) => {
-        console.log("Detection error:", error);
-        if (error.includes("No barcode or QR code detected") || error.includes("NotFoundException")) {
-          setScanError("No QR code detected. Please align the QR code within the scan area.");
-          if (errorTimeout) clearTimeout(errorTimeout);
-          errorTimeout = setTimeout(() => setScanError(null), 3000);
-        } else {
-          console.error("QR scan error:", error);
-          setScanError(`Error detecting QR code: ${error}`);
-        }
-      };
-
-      html5QrCode
-        .start(
-          { facingMode: "environment" },
-          {
-            fps: 20,
-            qrbox: { width: 350, height: 350 },
-            aspectRatio: 1.0,
-          },
-          qrCodeSuccessCallback,
-          qrCodeErrorCallback,
-        )
-        .catch((err) => {
-          console.error("Failed to start scanner:", err);
-          setScanResult("Failed to start scanner: " + err.message);
-          setIsScanning(false);
-        });
-
-      return () => {
-        if (errorTimeout) clearTimeout(errorTimeout);
-        html5QrCode.stop().catch((err) => console.error("Failed to stop scanner:", err));
-      };
+      initializeScanner()
+    } else if (!showScanner) {
+      cleanupScanner()
     }
-  }, [showScanner, selectedTicket, upcomingTickets, pastTickets, fetchOrders]);
+
+    // Cleanup on unmount or when scanner is hidden
+    return () => {
+      cleanupScanner()
+    }
+  }, [showScanner, selectedTicket, initializeScanner, cleanupScanner])
 
   const handleViewTicket = useCallback((ticket: DashboardTicket) => {
-    setSelectedTicket(ticket);
-    setIsDialogOpen(true);
-    setShowQR(false);
-    setShowScanner(false);
-    setScanResult(null);
-    setScanError(null);
-    setShowScanConfirm(false);
-  }, []);
+    setSelectedTicket(ticket)
+    setIsDialogOpen(true)
+    setShowQR(false)
+    setShowScanner(false)
+    setScanResult(null)
+    setScanError(null)
+    setShowScanConfirm(false)
+  }, [])
 
   const toggleQRCode = useCallback(() => {
-    setShowQR((prev) => !prev);
-    setShowScanner(false);
-    setScanResult(null);
-    setScanError(null);
-    setShowScanConfirm(false);
-  }, []);
+    setShowQR((prev) => !prev)
+    setShowScanner(false)
+    setScanResult(null)
+    setScanError(null)
+    setShowScanConfirm(false)
+  }, [])
 
   const handleToggleScanner = useCallback(() => {
     if (!showScanner) {
-      setShowScanConfirm(true);
+      setShowScanConfirm(true)
     } else {
-      setShowScanner(false);
-      setScanResult(null);
-      setScanError(null);
+      setShowScanner(false)
+      setScanResult(null)
+      setScanError(null)
     }
-  }, [showScanner]);
+  }, [showScanner])
 
   const confirmScan = useCallback(() => {
-    setShowScanConfirm(false);
-    setShowQR(false);
-    setScanResult(null);
-    setScanError(null);
-    setShowScanner(true);
-  }, []);
+    setShowScanConfirm(false)
+    setShowQR(false)
+    setScanResult(null)
+    setScanError(null)
+    setShowScanner(true)
+  }, [])
 
-  const memoizedUpcomingTickets = useMemo(() => upcomingTickets, [upcomingTickets]);
-  const memoizedPastTickets = useMemo(() => pastTickets, [pastTickets]);
+  const memoizedUpcomingTickets = useMemo(() => upcomingTickets, [upcomingTickets])
+  const memoizedPastTickets = useMemo(() => pastTickets, [pastTickets])
 
-  if (typeof window === "undefined") return null; // Prevent server-side rendering
+  if (typeof window === "undefined") return null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
@@ -947,6 +999,7 @@ export default function MyTicketPage() {
             </div>
           </div>
         )}
+
         {error && (
           <div className="text-center py-8 mb-8">
             <div
@@ -989,12 +1042,11 @@ export default function MyTicketPage() {
                     <div className="relative h-48 w-full overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-indigo-600/60 to-pink-600/40">
                         <img
-                          src={ticket.image || "/placeholder.svg"}
+                          src={ticket.image || "/placeholder.svg?height=200&width=400"}
                           alt={ticket.eventName}
                           className="h-full w-full object-cover"
                           onError={(e) => {
-                            console.error(`Image load failed for ${ticket.image}`);
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            ;(e.target as HTMLImageElement).src = "/placeholder.svg?height=200&width=400"
                           }}
                         />
                       </div>
@@ -1090,12 +1142,11 @@ export default function MyTicketPage() {
                     <div className="relative h-48 w-full overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-indigo-600/60 to-pink-600/40">
                         <img
-                          src={ticket.image || "/placeholder.svg"}
+                          src={ticket.image || "/placeholder.svg?height=200&width=400"}
                           alt={ticket.eventName}
                           className="h-full w-full object-cover"
                           onError={(e) => {
-                            console.error(`Image load failed for ${ticket.image}`);
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            ;(e.target as HTMLImageElement).src = "/placeholder.svg?height=200&width=400"
                           }}
                         />
                       </div>
@@ -1144,7 +1195,7 @@ export default function MyTicketPage() {
               <Card className="border-0 bg-white/80 backdrop-blur-lg shadow-xl">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                   <h3 className="mb-3 text-2xl font-bold text-slate-800">No Past Events</h3>
-                  <p className="mb-8 text-slate-600 max-w-md">Looks like you haven’t attended any events yet.</p>
+                  <p className="mb-8 text-slate-600 max-w-md">Looks like you have attended any events yet.</p>
                 </CardContent>
               </Card>
             )}
@@ -1210,8 +1261,7 @@ export default function MyTicketPage() {
                           height={200}
                           className="object-contain"
                           onError={(e) => {
-                            console.error(`QR code load failed for ${selectedTicket.qr_code}`);
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            ;(e.target as HTMLImageElement).src = "/placeholder.svg?height=200&width=200"
                           }}
                         />
                       </div>
@@ -1232,34 +1282,51 @@ export default function MyTicketPage() {
                   </div>
                 ) : showScanner ? (
                   <div className="flex flex-col items-center justify-center bg-gradient-to-br from-white to-slate-50 p-8">
-                    <div
-                      id="qr-reader"
-                      className="mb-6 w-full max-w-[350px] h-[350px] rounded-xl overflow-hidden border-2 border-dashed border-gray-300"
-                      aria-live="polite"
-                    ></div>
-                    <p className="text-sm text-slate-600 font-medium mb-4 text-center">
-                      Align the QR code within the dashed area
-                    </p>
-                    {(scanResult || scanError) && (
+                    <div className="mb-6 w-full max-w-[300px] h-[300px] rounded-xl overflow-hidden border-2 border-dashed border-purple-300 bg-gray-50 flex items-center justify-center">
+                      <div id="qr-reader" className="w-full h-full" aria-live="polite"></div>
+                    </div>
+
+                    {isScanning && (
+                      <div className="mb-4 flex items-center gap-2 text-purple-600 font-medium">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                        Processing scan...
+                      </div>
+                    )}
+
+                    {scanError && (
+                      <div
+                        className="mb-4 p-3 rounded-xl text-center font-medium bg-yellow-50 text-yellow-700 border border-yellow-200"
+                        role="alert"
+                      >
+                        {scanError}
+                      </div>
+                    )}
+
+                    {scanResult && (
                       <div
                         className={`mb-4 p-3 rounded-xl text-center font-medium ${
-                          scanResult?.includes("success")
+                          scanResult.includes("✅")
                             ? "bg-green-50 text-green-700 border border-green-200"
                             : "bg-red-50 text-red-700 border border-red-200"
                         }`}
                         role="alert"
                       >
-                        {scanResult || scanError}
+                        {scanResult}
                       </div>
                     )}
-                    {isScanning && <div className="mb-4 text-slate-600 font-medium">Scanning...</div>}
+
+                    <p className="text-sm text-slate-600 font-medium mb-4 text-center">
+                      {scannerActiveRef.current ? "Align the QR code within the camera view" : "Starting camera..."}
+                    </p>
+
                     <Button
                       onClick={handleToggleScanner}
                       variant="outline"
                       className="w-full border-2 border-slate-200 hover:border-slate-300 font-semibold py-3 rounded-xl"
                       aria-label="Stop QR code scanner"
+                      disabled={isScanning}
                     >
-                      Stop Scanner
+                      {isScanning ? "Processing..." : "Stop Scanner"}
                     </Button>
                   </div>
                 ) : (
@@ -1290,7 +1357,7 @@ export default function MyTicketPage() {
                         <span className="font-medium">
                           Status:{" "}
                           {selectedTicket.scanned ? (
-                            <span className="text-green-600 font-semibold"> ✅ Scanned</span>
+                            <span className="text-green-600 font-semibold">✅ Scanned</span>
                           ) : (
                             <span className="text-orange-600 font-semibold">⏳ Not Scanned</span>
                           )}
@@ -1313,7 +1380,7 @@ export default function MyTicketPage() {
                         aria-label="Scan QR code"
                       >
                         <SparklesIcon className="h-4 w-4 mr-2" aria-hidden="true" />
-                        Scan QR Code
+                        {isScanning ? "Scanning..." : "Scan QR Code"}
                       </Button>
                     </div>
                   </div>
@@ -1352,5 +1419,5 @@ export default function MyTicketPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

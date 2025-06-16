@@ -31,6 +31,8 @@ interface DashboardTicket {
   qr_code: string | null
 }
 
+type ScannerState = "stopped" | "starting" | "running" | "stopping"
+
 export default function MyTicketPage() {
   const [selectedTicket, setSelectedTicket] = useState<DashboardTicket | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -46,9 +48,9 @@ export default function MyTicketPage() {
   const [showScanConfirm, setShowScanConfirm] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Refs for scanner management
-  const scannerRef = useRef<any>(null)
-  const scannerStateRef = useRef<"stopped" | "starting" | "running" | "stopping">("stopped")
+  // Refs for scanner management - using unknown to avoid type conflicts
+  const scannerRef = useRef<unknown>(null)
+  const scannerStateRef = useRef<ScannerState>("stopped")
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Ensure component is mounted before running client-side code
@@ -166,7 +168,8 @@ export default function MyTicketPage() {
     if (scannerRef.current && scannerStateRef.current === "running") {
       try {
         scannerStateRef.current = "stopping"
-        await scannerRef.current.stop()
+        // Use type assertion to call stop method
+        await (scannerRef.current as { stop: () => Promise<unknown> }).stop()
         scannerStateRef.current = "stopped"
         console.log("Scanner stopped successfully")
       } catch (error) {
@@ -313,7 +316,17 @@ export default function MyTicketPage() {
           }
         }
 
-        await scannerRef.current.start(
+        // Use type assertion to call start method with proper parameters
+        const scanner = scannerRef.current as {
+          start: (
+            camera: { facingMode: string },
+            config: { fps: number; qrbox: { width: number; height: number }; aspectRatio: number },
+            successCallback: (decodedText: string) => void,
+            errorCallback: (error: string) => void,
+          ) => Promise<unknown>
+        }
+
+        await scanner.start(
           { facingMode: "environment" },
           {
             fps: 20,
@@ -683,7 +696,7 @@ export default function MyTicketPage() {
               <Card className="border-0 bg-white/80 backdrop-blur-lg shadow-xl">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                   <h3 className="mb-3 text-2xl font-bold text-slate-800">No Past Events</h3>
-                  <p className="mb-8 text-slate-600 max-w-md">Looks like you haven't attended any events yet.</p>
+                  <p className="mb-8 text-slate-600 max-w-md">Looks like you have attended any events yet.</p>
                 </CardContent>
               </Card>
             )}

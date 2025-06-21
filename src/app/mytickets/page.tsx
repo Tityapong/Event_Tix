@@ -1,3 +1,25 @@
+import { ErrorBoundary } from "@/components/error-boundary"
+import MyTicketPage from "@/components/my-ticket-page"
+
+export default function MyTicketsPage() {
+  return (
+    <ErrorBoundary>
+      <MyTicketPage />
+    </ErrorBoundary>
+  )
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // "use client"
 
 // import { useState, useEffect } from "react"
@@ -611,13 +633,3 @@
 // }
 
 
-import { ErrorBoundary } from "@/components/error-boundary"
-import MyTicketPage from "@/components/my-ticket-page"
-
-export default function MyTicketsPage() {
-  return (
-    <ErrorBoundary>
-      <MyTicketPage />
-    </ErrorBoundary>
-  )
-}
